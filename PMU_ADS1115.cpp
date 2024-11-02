@@ -1,4 +1,16 @@
+// ##################################################################
+// Include libraries:
+
 #include "PMU_ADS1115.h"
+
+// ###################################################################
+// Define macros:
+
+#define ADS_RAW_RANGE             32767.0     // 16 bit resolution. int16 value from get ADS channels
+#define ADS_MAX_VOLTAGE           6.144       // reference ADC voltage
+
+// ##################################################################
+// PMU_ADS1115 class:
 
 PMU_ADS1115* PMU_ADS1115::_instances = {nullptr};
 
@@ -57,29 +69,29 @@ bool PMU_ADS1115::init(void)
   return true;
 }
 
-//   void handleConversion()
-//   {
-//     if (_ads_flag)
-//     {
-//       // save the value
-//       ADS_val[ADS_channel] = ADS_EXT.getValue();
-//       switch(ADS_channel)
-//       {
-//       case 0:
-//         amper_battery=abs(1000.0*ADS_val[0]/ADS_INB_RAW_RANGE*ADS_INB_MAX_VOLTAGE - ACS758_OFFSET_GAIN*voltage_board)*ACS758_SENSITIVITY;
-//       break;
-//       case 1:
-//         voltage_battery=1000.0*ADS_val[1]/ADS_INB_RAW_RANGE*ADS_INB_MAX_VOLTAGE*VOLTAGE_BATTERY_SCALE;
-//       break;
-//       case 2:
-//         voltage_board=1000.0*ADS_val[2]/ADS_INB_RAW_RANGE*ADS_INB_MAX_VOLTAGE*VOLTAGE_BOARD_SCALE;
-//       break;
-//       }
-//       // request next channel
-//       ADS_channel++;
-//       if (ADS_channel >= 3) ADS_channel = 0;
-//       ADS_EXT.readADC(ADS_channel);
-//       _ads_flag = false;
-//     }
-//   }
+void PMU_ADS1115::update(void)
+{
+  if (_ads_flag)
+  {
+    // save the value
+    ADS_val[ADS_channel] = ADS.getValue();
+    switch(ADS_channel)
+    {
+    case 0:
+      // value[0] =abs(1000.0*ADS_val[0]/ADS_INB_RAW_RANGE*ADS_INB_MAX_VOLTAGE - ACS758_OFFSET_GAIN*voltage_board)*ACS758_SENSITIVITY;
+    break;
+    case 1:
+      // value[1] =1000.0*ADS_val[1]/ADS_INB_RAW_RANGE*ADS_INB_MAX_VOLTAGE*VOLTAGE_BATTERY_SCALE;
+    break;
+    case 2:
+      // value[2] =1000.0*ADS_val[2]/ADS_INB_RAW_RANGE*ADS_INB_MAX_VOLTAGE*VOLTAGE_BOARD_SCALE;
+    break;
+    }
+    // request next channel
+    ADS_channel++;
+    if (ADS_channel >= 3) ADS_channel = 0;
+    ADS.readADC(ADS_channel);
+    _ads_flag = false;
+  }
+}
 
