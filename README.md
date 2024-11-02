@@ -86,8 +86,8 @@ void begin() {
 void ```setGain(uint8_t gain)``` set the gain value, indicating the maxVoltage that can be measured Adjusting the gain allows one to make more precise measurements. Note: the gain is not set in the device until an explicit read/request of the ADC (any read call will do). See table below.   
 uint8_t getGain() returns the gain value (index).    
 
-|PGA value   |Max Voltage     | 
-|------------|----------------|
+|PGA value   |Full scale range Voltage     | 
+|------------|-----------------------------|
 |0           |±6.144V default 
 |1           |±4.096V 
 |2           |±2.048V 
@@ -205,65 +205,79 @@ After one of these calls one need to call
 ```bool isBusy()``` Is the conversion ready?
 int16_t getValue() Read the result of the last conversion.
 
-##############  ReadADC continuous mode:
-To use the continuous mode one need three calls
+###  ReadADC continuous mode
 
-void setMode(0) 0 = CONTINUOUS, 1 = SINGLE (default). Note: the mode is not set in the device until an explicit read/request of the ADC (any read call will do).
-int16_t readADC(uint8_t pin) or void requestADC(uint8_t pin) to get the continuous mode started.
-int16_t getValue() to return the last value read by the device. Note this can be a different pin, so be warned. Calling this over and over again can give the same value multiple times.
-By using bool isBusy() or bool isReady() one can wait until new data is available. Note this only works in the SINGLE_SHOT modus.
+To use the continuous mode one need three calls   
 
-In continuous mode, you can't use isBusy() or isReady() functions to wait until new data available.
+```void setMode(0)``` 0 = CONTINUOUS, 1 = SINGLE (default). 
+
+- **Note:** the mode is not set in the device until an explicit read/request of the ADC (any read call will do).   
+
+```int16_t readADC(uint8_t pin)``` or ```void requestADC(uint8_t pin)``` to get the continuous mode started.   
+```int16_t getValue()``` to return the last value read by the device. Note this can be a different pin, so be warned. Calling this over and over again can give the same value multiple times.    
+By using ```bool isBusy()``` or ```bool isReady()`` one can wait until new data is available. Note this only works in the SINGLE_SHOT modus.   
+
+In continuous mode, you can't use ```isBusy()``` or ```isReady()``` functions to wait until new data available.   
 Instead you can configure the threshold registers to allow the ALERT/RDY pin to trigger an interrupt signal when conversion data ready.
 
-################# Threshold registers ==> mode RDY pin
-If the thresholdHigh is set to 0x0100 and the thresholdLow to 0x0000 the ALERT/RDY pin is triggered when a conversion is ready.
+### Threshold registers ==> mode RDY pin
 
-void setComparatorThresholdLow(int16_t lo) writes value to device directly.
-void setComparatorThresholdHigh(int16_t hi) writes value to device directly.
-int16_t getComparatorThresholdLow() reads value from device.
-int16_t getComparatorThresholdHigh() reads value from device.
+If the thresholdHigh is set to 0x0100 and the thresholdLow to 0x0000 the ALERT/RDY pin is triggered when a conversion is ready.  
 
-#################### Comparator
-Please read Page 15 of the datasheet as the behaviour of the comparator is not trivial.
+```void setComparatorThresholdLow(int16_t lo)``` writes value to device directly.    
+```void setComparatorThresholdHigh(int16_t hi)``` writes value to device directly.   
+```int16_t getComparatorThresholdLow()``` reads value from device.    
+```int16_t getComparatorThresholdHigh()``` reads value from device.   
 
-NOTE: all comparator settings are copied to the device only after an explicit readADC() or requestADC()
+### Comparator
 
-Comparator Mode
-When configured as a TRADITIONAL comparator, the ALERT/RDY pin asserts (active low by default) when conversion data exceed the limit set in the high threshold register. The comparator then de-asserts when the input signal falls below the low threshold register value.
+- NOTE: all comparator settings are copied to the device only after an explicit ```readADC()``` or ```requestADC()```   
 
-void setComparatorMode(uint8_t mode) value 0 = TRADITIONAL 1 = WINDOW,
-uint8_t getComparatorMode()
-If the comparator LATCH is set, the ALERT/RDY pin asserts and it will be reset after reading the sensor (conversion register) again. An SMB alert command (00011001) on the I2C bus will also reset the alert state. Not implemented in the library (yet)
+#### Comparator Mode  
 
-In WINDOW comparator mode, the ALERT/RDY pin asserts if conversion data exceeds the high threshold register or falls below the low threshold register. In this mode the alert is held if the LATCH is set. This is similar as above.
+When configured as a TRADITIONAL comparator, the ALERT/RDY pin asserts (active low by default) when conversion data exceed the limit set in the high threshold register. The comparator then de-asserts when the input signal falls below the low threshold register value.   
 
-Polarity
+```void setComparatorMode(uint8_t mode)``` value 0 = TRADITIONAL 1 = WINDOW,   
+```uint8_t getComparatorMode()```   
+If the comparator LATCH is set, the ALERT/RDY pin asserts and it will be reset after reading the sensor (conversion register) again. An SMB alert command (00011001) on the I2C bus will also reset the alert state. Not implemented in the library (yet)   
+
+In WINDOW comparator mode, the ALERT/RDY pin asserts if conversion data exceeds the high threshold register or falls below the low threshold register. In this mode the alert is held if the LATCH is set. This is similar as above.   
+
+#### Polarity
+
 Default state of the ALERT/RDY pin is LOW, can be to set HIGH.
 
-void setComparatorPolarity(uint8_t pol) Flag is only explicitly set after a readADC() or a requestADC()
-uint8_t getComparatorPolarity() returns value set.
-Latch
+```void setComparatorPolarity(uint8_t pol)``` Flag is only explicitly set after a ```readADC()``` or a ```requestADC()```   
+```uint8_t getComparatorPolarity()``` returns value set.   
+
+Latch   
 Holds the ALERT/RDY to HIGH (or LOW depending on polarity) after triggered even if actual value has been 'restored to normal' value.
 
-void setComparatorLatch(uint8_t latch) 0 = NO LATCH, not 0 = LATCH
-uint8_t getComparatorLatch() returns value set.
-QueConvert
-Set the number of conversions before trigger activates. The void setComparatorQueConvert(uint8_t mode) is used to set the number of conversions that exceed the threshold before the ALERT/RDY pin is set HIGH. A value of 3 (or above) effectively disables the comparator. See table below.
+```void setComparatorLatch(uint8_t latch)``` 0 = NO LATCH, not 0 = LATCH   
+```uint8_t getComparatorLatch()``` returns value set.   
 
-void setComparatorQueConvert(uint8_t mode) See table below.
-uint8_t getComparatorQueConvert() returns value set.
-value meaning Notes
-0 trigger alert after 1 conversion  
-1 trigger alert after 2 conversions 
-2 trigger alert after 4 conversions 
-3 Disable comparator  default
-Threshold registers comparator mode
-Depending on the comparator mode TRADITIONAL or WINDOW the thresholds registers mean something different see - Comparator Mode above or datasheet.
+QueConvert   
+Set the number of conversions before trigger activates. The ```void setComparatorQueConvert(uint8_t mode)``` is used to set the number of conversions that exceed the threshold before the ALERT/RDY pin is set HIGH. A value of 3 (or above) effectively disables the comparator. See table below.
 
-void setComparatorThresholdLow(int16_t lo) set the low threshold; take care the hi >= lo.
-void setComparatorThresholdHigh(int16_t hi) set the high threshold; take care the hi >= lo.
-int16_t getComparatorThresholdLow() reads value from device.
-int16_t getComparatorThresholdHigh() reads value from device.
+```void setComparatorQueConvert(uint8_t mode)``` See table below.   
+```uint8_t getComparatorQueConvert()``` returns value set.   
 
-*/
+|value |meaning Notes                       |
+|------|------------------------------------|
+|0     |trigger alert after 1 conversion  
+|1     |trigger alert after 2 conversions 
+|2     |trigger alert after 4 conversions 
+|3     |Disable comparator  default
+
+#### Threshold registers comparator mode  
+
+Depending on the comparator mode TRADITIONAL or WINDOW the thresholds registers mean something different see - Comparator Mode above or datasheet.   
+
+```void setComparatorThresholdLow(int16_t lo)``` set the low threshold; take care the hi >= lo.    
+```void setComparatorThresholdHigh(int16_t hi)``` set the high threshold; take care the hi >= lo.   
+```int16_t getComparatorThresholdLow()``` reads value from device.    
+```int16_t getComparatorThresholdHigh()``` reads value from device.   
+
+--------------------------------------------------------------------
+
+
