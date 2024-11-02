@@ -1,49 +1,75 @@
-/* ADS1X15 Library Help:
+# PMU_ADS1115 Library for Arduino
 
-Reference repository: https://github.com/RobTillaart/ADS1X15
+- This library can be used for a power module unit (PMU) as part of projects.
+- This library uses the <ADS1X15.h> library by Rob Tillaart for communication with the ADS1115 ADC.
+- Reference repository for the <ADS1X15.h> library: https://github.com/RobTillaart/ADS1X15
 
 Arduino library for I2C ADC ADS1015, ADS1115, and similar.
 Version: 0.3.11
 
+------------------------------------------------------
+# RobTillaart/ADS1X15 library user Guide 
+
+Here’s a basic guide to help you get started with the RobTillaart/ADS1X15 library, which is often used to interface with the ADS1115 and ADS1015 ADCs:
+
+### Installation
+
+To install the ADS1X15 library:    
+Open the Arduino IDE.    
+Go to Sketch > Include Library > Manage Libraries.     
+Search for ADS1X15 by Rob Tillaart and install the latest version.    
+Alternatively, you can download it from GitHub and add it to the Arduino libraries folder.    
+
+### Library Overview
+
+The ADS1X15 library supports two analog-to-digital converters (ADC) from Texas Instruments:   
+ADS1115: 16-bit ADC with a programmable gain amplifier (PGA).   
+ADS1015: 12-bit ADC with similar features but faster conversion.   
+These ADCs allow for high-resolution analog input measurements, commonly used in applications requiring precise voltage readings.    
+
 This library should work for the devices mentioned below, although not all sensors support all functionality.
 
-Device    Channels  Resolution  Max sps   Comparator  ProgGainAMP 
-ADS1013   1         12          3300      N           N 
-ADS1014   1         12          3300      Y           Y 
-ADS1015   4         12          3300      Y           Y 
-ADS1113   1         16          860       N           N 
-ADS1114   1         16          860       Y           Y 
-ADS1115   4         16          860       Y           Y 
+|Device    |Channels  |Resolution  |Max sps   |Comparator  |ProgGainAMP|
+|----------|----------|------------|----------|------------|-----------| 
+|ADS1013   |1         |12          |3300      |N           |N          |
+|ADS1014   |1         |12          |3300      |Y           |Y          |
+|ADS1015   |4         |12          |3300      |Y           |Y          | 
+|ADS1113   |1         |16          |860       |N           |N          | 
+|ADS1114   |1         |16          |860       |Y           |Y          | 
+|ADS1115   |4         |16          |860       |Y           |Y          | 
 
-As the 1015 and the 1115 are both 4 channels these are the most interesting from functionality point of view as these can also do differential measurement.
+As the 1015 and the 1115 are both 4 channels these are the most interesting from functionality point of view as these can also do differential measurement.   
 
-Interface
-The address of the ADS1113/4/5 is determined by to which pin the ADDR is connected to:
+### Interface
+The address of the ADS1113/4/5 is determined by to which pin the ADDR is connected to:   
 
-ADDR pin connected to Address Notes
-GND 0x48  default
-VDD 0x49  
-SDA 0x4A  
+ADDR pin connected to Address Notes  
+GND 0x48 (default)   
+VDD 0x49     
+SDA 0x4A    
 SCL 0x4B  
 
-Initializing
-To initialize the library you must call a constructor as described below.
+### Initializing
 
-ADS1x15() constructor, should not be used.
-ADS1013(address, TwoWire *wire = &Wire) Constructor with device address, and optional the Wire interface as parameter.
-ADS1014(address, TwoWire *wire = &Wire) Constructor with device address, and optional the Wire interface as parameter.
-ADS1015(address, TwoWire *wire = &Wire) Constructor with device address, and optional the Wire interface as parameter.
-ADS1113(address, TwoWire *wire = &Wire) Constructor with device address, and optional the Wire interface as parameter.
-ADS1114(address, TwoWire *wire = &Wire) Constructor with device address, and optional the Wire interface as parameter.
-ADS1115(address, TwoWire *wire = &Wire) Constructor with device address, and optional the Wire interface as parameter.
-The function void setWireClock(uint32_t speed) is used to set the clock speed of the used I2C interface.
+To initialize the library you must call a constructor as described below.    
 
-The function uint32_t getWireClock() is a prototype. It returns the value set by setWireClock(). This is not necessary the actual value. When no value is set getWireClock() returns 0. Need to implement a read / calculate from low level I2C code (e.g. TWBR on AVR), better the Arduino Wire lib should support this call (ESP32 does).
+```ADS1x15()``` constructor, should not be used.    
+```ADS1013(address, TwoWire *wire = &Wire)``` Constructor with device address, and optional the Wire interface as parameter.   
+```ADS1014(address, TwoWire *wire = &Wire)``` Constructor with device address, and optional the Wire interface as parameter.    
+```ADS1015(address, TwoWire *wire = &Wire)``` Constructor with device address, and optional the Wire interface as parameter.   
+```ADS1113(address, TwoWire *wire = &Wire)``` Constructor with device address, and optional the Wire interface as parameter.    
+```ADS1114(address, TwoWire *wire = &Wire)``` Constructor with device address, and optional the Wire interface as parameter.   
+```ADS1115(address, TwoWire *wire = &Wire)``` Constructor with device address, and optional the Wire interface as parameter.    
 
-After construction the ADS.begin() need to be called. This will return false if an invalid address is used. The function bool isConnected() can be used to verify the reading of the ADS. The function void reset() is sets the parameters to their initial value as in the constructor.
+The function void ```setWireClock(uint32_t speed)``` is used to set the clock speed of the used I2C interface.    
 
-For example.
+The function ```uint32_t getWireClock()``` is a prototype. It returns the value set by ```setWireClock()```. This is not necessary the actual value. When no value is set ```getWireClock()``` returns 0. Need to implement a read / calculate from low level I2C code (e.g. TWBR on AVR), better the Arduino Wire lib should support this call (ESP32 does).
 
+After construction the ```ADS.begin()``` need to be called. This will return false if an invalid address is used. The function bool ```isConnected()``` can be used to verify the reading of the ADS. The function void ```reset()``` is sets the parameters to their initial value as in the constructor.   
+
+For example:
+
+```C++
 #include "ADS1X15.h"
 
 // initialize ADS1115 on I2C bus 1 with default address 0x48
@@ -54,69 +80,84 @@ void begin() {
     // error ADS1115 not connected
   }
 }
+```
 
-Programmable Gain
-void setGain(uint8_t gain) set the gain value, indicating the maxVoltage that can be measured Adjusting the gain allows one to make more precise measurements. Note: the gain is not set in the device until an explicit read/request of the ADC (any read call will do). See table below.
-uint8_t getGain() returns the gain value (index).
-PGA value   Max Voltage 
-0           ±6.144V default
-1           ±4.096V 
-2           ±2.048V 
-4           ±1.024V 
-8           ±0.512V 
-16          ±0.256V 
-float getMaxVoltage() returns the max voltage with the current gain.
-float toVoltage(int16_t raw = 1) converts a raw measurement to a voltage. Can be used for normal and differential measurements. The default value of 1 returns the conversion factor for any raw number.
+### Programmable Gain
+void ```setGain(uint8_t gain)``` set the gain value, indicating the maxVoltage that can be measured Adjusting the gain allows one to make more precise measurements. Note: the gain is not set in the device until an explicit read/request of the ADC (any read call will do). See table below.   
+uint8_t getGain() returns the gain value (index).    
+
+|PGA value   |Max Voltage     | 
+|------------|----------------|
+|0           |±6.144V default 
+|1           |±4.096V 
+|2           |±2.048V 
+|4           |±1.024V 
+|8           |±0.512V 
+|16          |±0.256V 
+
+float ```getMaxVoltage()``` returns the max voltage with the current gain.    
+float ```toVoltage(int16_t raw = 1)``` converts a raw measurement to a voltage. Can be used for normal and differential measurements. The default value of 1 returns the conversion factor for any raw number.
 The voltage factor can also be used to set HIGH and LOW threshold registers with a voltage in the comparator mode. Check the examples.
 
- float f = ADS.toVoltage();
+```
+ float f = ADS.toVoltage(); 
  ADS.setComparatorThresholdLow( 3.0 / f );
  ADS.setComparatorThresholdLow( 4.3 / f );
+```
 
-Operational mode
-The ADS sensor can operate in single shot or continuous mode. Depending on how often one needs a conversion one can tune the mode.
+### Operational mode
 
-void setMode(uint8_t mode) 0 = CONTINUOUS, 1 = SINGLE (default) Note: the mode is not set in the device until an explicit read/request of the ADC (any read call will do).
-uint8_t getMode() returns current mode 0 or 1, or ADS1X15_INVALID_MODE = 0xFE.
+The ADS sensor can operate in single shot or continuous mode. Depending on how often one needs a conversion one can tune the mode.  
 
-Data rate:
-void setDataRate(uint8_t dataRate) Data rate depends on type of device. For all devices the index 0..7 can be used, see table below. Values above 7 ==> will be set to the default 4. Note: the data rate is not set in the device until an explicit read/request of the ADC (any read call will do).
-uint8_t getDataRate() returns the current data rate (index).
-The library has no means to convert this index to the actual numbers as that would take 32 bytes.
+```void setMode(uint8_t mode)``` 0 = CONTINUOUS, 1 = SINGLE (default) Note: the mode is not set in the device until an explicit read/request of the ADC (any read call will do).  
 
-Data rate in samples per second, based on datasheet numbers.
+```uint8_t getMode()``` returns current mode 0 or 1, or ADS1X15_INVALID_MODE = 0xFE.  
 
-data_rate  ADS101x   ADS 111x  
-0           128       8 slowest
-1           250       16  
-2           490       32  
-3           920       64  
-4           1600      128 default
-5           2400      250 
-6           3300      475 
-7           3300      860 fastest
-################ ReadADC Single mode
-Reading the ADC is very straightforward, the readADC() function handles all in one call. Under the hood it uses the asynchronous calls.
+### Data rate
 
-int16_t readADC(uint8_t pin = 0) normal ADC functionality, pin = 0..3. If the pin number is out of range, this function will return 0.
-Default pin = 0 as this is convenient for 1 channel devices.
+```void setDataRate(uint8_t dataRate)``` Data rate depends on type of device. For all devices the index 0..7 can be used, see table below. Values above 7 ==> will be set to the default 4. Note: the data rate is not set in the device until an explicit read/request of the ADC (any read call will do).
+uint8_t ```getDataRate()``` returns the current data rate (index).   
+The library has no means to convert this index to the actual numbers as that would take 32 bytes.   
 
+Data rate in samples per second, based on datasheet numbers.   
+
+|data_rate   |ADS101x   |ADS 111x      |
+|------------|----------|--------------|
+|0           |128       |8 slowest
+|1           |250       |16  
+|2           |490       |32  
+|3           |920       |64  
+|4           |1600      |128 default
+|5           |2400      |250 
+|6           |3300      |475 
+|7           |3300      |860 fastest  
+
+### ReadADC Single mode
+
+Reading the ADC is very straightforward, the ```readADC()``` function handles all in one call. Under the hood it uses the asynchronous calls.   
+
+```int16_t readADC(uint8_t pin = 0)``` normal ADC functionality, pin = 0..3. If the pin number is out of range, this function will return 0.
+Default pin = 0 as this is convenient for 1 channel devices.  
+
+```
 // read ADC in pin 2
 ADS.readADC(2);
 
 // read ADC in pin 0 - two ways
 ADS.readADC();
 ADS.readADC(0);
+```
 
-To read the ADC in an asynchronous way (e.g. to minimize blocking) one has to use three calls:
+To read the ADC in an asynchronous way (e.g. to minimize blocking) one has to use three calls:    
 
-void requestADC(uint8_t pin) Start the conversion. pin = 0..3.
-bool isBusy() Is the conversion not ready?
-bool isReady() Is the conversion ready? (= wrapper around isBusy() )
-int16_t getValue() Read the result of the conversion.
+```void requestADC(uint8_t pin)``` Start the conversion. pin = 0..3.   
+```bool isBusy()``` Is the conversion not ready?   
+```bool isReady()``` Is the conversion ready? (= wrapper around isBusy() )   
+```int16_t getValue()``` Read the result of the conversion.   
 
-in terms of code:
+in terms of code:  
 
+```C++
   void setup()
   {
     // other setup things here
@@ -133,30 +174,35 @@ in terms of code:
     }
     // do other things here
   }
+```
 
-############### ReadADC Differential
-For reading the ADC in a differential way there are 4 calls possible.
+### ReadADC Differential
 
-int16_t readADC_Differential_0_1() returns the difference between 2 ADC pins.
-int16_t readADC_Differential_0_3() ADS1x15 only
-int16_t readADC_Differential_1_3() ADS1x15 only
-int16_t readADC_Differential_2_3() ADS1x15 only
-int16_t readADC_Differential_0_2() ADS1x15 only - in software (no async equivalent)
-int16_t readADC_Differential_1_2() ADS1x15 only - in software (no async equivalent)
+For reading the ADC in a differential way there are 4 calls possible.   
 
+```int16_t readADC_Differential_0_1()``` returns the difference between 2 ADC pins.   
+```int16_t readADC_Differential_0_3()``` ADS1x15 only   
+```int16_t readADC_Differential_1_3()``` ADS1x15 only   
+```int16_t readADC_Differential_2_3()``` ADS1x15 only    
+```int16_t readADC_Differential_0_2()``` ADS1x15 only - in software (no async equivalent)    
+```int16_t readADC_Differential_1_2()``` ADS1x15 only - in software (no async equivalent)    
+
+```
 // read differential ADC between pin 0 and 1
 ADS.readADC_Differential_0_1(0);
+```
 
-The differential reading of the ADC can also be done with asynchronous calls.
+The differential reading of the ADC can also be done with asynchronous calls.  
 
-int16_t requestADC_Differential_0_1() starts conversion for differential reading
-int16_t requestADC_Differential_0_3() ADS1x15 only
-int16_t requestADC_Differential_1_3() ADS1x15 only
-int16_t requestADC_Differential_2_3() ADS1x15 only
-After one of these calls one need to call
-int16_t getValue() Read the result of the last conversion.
+```int16_t requestADC_Differential_0_1()``` starts conversion for differential reading   
+```int16_t requestADC_Differential_0_3()``` ADS1x15 only   
+```int16_t requestADC_Differential_1_3()``` ADS1x15 only    
+```int16_t requestADC_Differential_2_3()``` ADS1x15 only    
 
-bool isBusy() Is the conversion ready?
+After one of these calls one need to call   
+```int16_t getValue()``` Read the result of the last conversion.     
+
+```bool isBusy()``` Is the conversion ready?
 int16_t getValue() Read the result of the last conversion.
 
 ##############  ReadADC continuous mode:
