@@ -1,36 +1,59 @@
-#include "PMU_ADS1117.h"
+#include "PMU_ADS1115.h"
 
+PMU_ADS1115* PMU_ADS1115::_instances = {nullptr};
 
-
-
-bool PMU_ADS1117::init(void)
+void _ADS_adsReady(void)
 {
-  // if(ADS.isConnected())
-  // {
-  //   ads_exist = 1;
-  //   ADS.begin();
-  //   ADS.setGain(0);        // 6.144 volt --> max voltage read
-  //   ADS.setDataRate(ADS_INB_DATA_RATE); 
-      
-  //   // SET ALERT RDY PIN
-  //   ADS.setComparatorThresholdHigh(0x8000);
-  //   ADS.setComparatorThresholdLow(0x0000);
-  //   ADS.setComparatorQueConvert(0);
-    
-  //   // SET INTERRUPT HANDLER TO CATCH CONVERSION READY
-  //   pinMode(ADS_INB_RDY_PIN, INPUT_PULLUP);
-  //   attachInterrupt(digitalPinToInterrupt(ADS_INB_RDY_PIN), ADS_adsReady, RISING);
+  PMU_ADS1115::_instances->_ads_flag = true;
+}
 
-  //   ADS.setMode(0);               // Continuse mode
-  //   ADS.readADC(ADS_channel);     // trigger first read
-  // }
-  // else
-  // {
-  //   ads_exist = 0;
-  //   // #ifdef DEBUG_ENA
-  //   //   Serial.println("ADS Sensor Not Connected!");
-  //   // #endif
-  // }
+PMU_ADS1115::PMU_ADS1115(uint8_t address)
+{
+  parameters.ADDRESS = address;
+  ADS = ADS1115(parameters.ADDRESS);
+
+  parameters.DATA_RATE = 4;
+  parameters.RDY_PIN = -1;
+
+  _ads_exist = false;
+
+}
+
+PMU_ADS1115::~PMU_ADS1115()
+{
+
+}
+
+bool PMU_ADS1115::init(void)
+{
+  _funPointer = _ADS_adsReady;
+
+  if(ADS.isConnected())
+  {
+    _ads_exist = true;
+    ADS.begin();
+    ADS.setGain(0);        // 6.144 volt --> max voltage read
+    ADS.setDataRate(parameters.DATA_RATE); 
+      
+    // SET ALERT RDY PIN
+    ADS.setComparatorThresholdHigh(0x8000);
+    ADS.setComparatorThresholdLow(0x0000);
+    ADS.setComparatorQueConvert(0);
+    
+    // SET INTERRUPT HANDLER TO CATCH CONVERSION READY
+    pinMode(parameters.RDY_PIN, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(parameters.RDY_PIN), _funPointer, RISING);
+
+    ADS.setMode(0);               // Continuse mode
+    ADS.readADC(0);     // trigger first read
+  }
+  else
+  {
+    _ads_exist = 0;
+    // #ifdef DEBUG_ENA
+    //   Serial.println("ADS Sensor Not Connected!");
+    // #endif
+  }
   return true;
 }
 
@@ -60,7 +83,3 @@ bool PMU_ADS1117::init(void)
 //     }
 //   }
 
-// void ADS_EXT_adsReady(void)
-// {
-//   _ads_flag = true;
-// }
