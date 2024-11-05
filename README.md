@@ -7,7 +7,7 @@
 Arduino library for I2C ADC ADS1015, ADS1115, and similar.
 Version: 0.3.11
 
-------------------------------------------------------
+-------------------------------------------------------
 # RobTillaart/ADS1X15 library user Guide 
 
 Here’s a basic guide to help you get started with the RobTillaart/ADS1X15 library, which is often used to interface with the ADS1115 and ADS1015 ADCs:
