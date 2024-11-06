@@ -20,18 +20,21 @@ class PMU_ADS1115
 {
   public:
 
-    // Last error accured for object.
+    /// Last error accured for object.
     String errorMessage;
 
     struct ParametersStructure
     {
-      // Device number. number can be 1, 2, 3 or 4.
+      /**
+       * Device number. number can be 1, 2, 3 or 4.
+       * Max 4 PMU_ADS1115 device can used.
+       */
       uint8_t DEVICE_NUM;
 
       /// ADS1115 i2c device address
       uint16_t ADDRESS;                    
 
-      /*
+      /**
         Data rate in samples per second, based on datasheet numbers.   
 
       |data_rate---|ADS101x---|ADS 111x------|
@@ -59,6 +62,7 @@ class PMU_ADS1115
       /// Digital input pin on arduino for ALERT/RDY digital output pin. This pin used for conversion ready pin.
       int8_t RDY_PIN; 
 
+      /// RDY pin signal polarity. 0: LowActive, 1: HighActive
       uint8_t RDY_POLARITY;                    
       
       /// Sensitivity of channels. milli volt per user defined unit. [mv/uu]
@@ -67,7 +71,7 @@ class PMU_ADS1115
       /// Offsset value for channels. [mvolt]
       float OFFSET[4];
 
-      /// Enable/Disable of channels.
+      /// Enable/Disable of devices. 0: InActive, 1: Active
       bool ACTIVE_MODE[4];
 
       /**
@@ -91,38 +95,47 @@ class PMU_ADS1115
        */
       uint8_t PGA;
 
-      // Update frequency. This value ensures that updates occur at a specific frequency. Hint: A value of 0 means it is disabled and update in free frequency.
+      /// Update frequency. This value ensures that updates occur at a specific frequency. Hint: A value of 0 means it is disabled and update in free frequency.
       float UPDATE_FRQ;
     }parameters;
 
     struct ValuesStructure
     {
-      // Raw 16bit values for channels.
+      /// Raw 16bit values for channels.
       int16_t raw[4];
 
-      // Converted values by sensitivity and offsets.
+      /// Converted values by sensitivity and offsets.
       float converted[4];
     }value;
 
-    // ADS1115 object from ADS1X15 library.
+    /// ADS1115 object from ADS1X15 library.
     ADS1115 ADS;                          
 
     /// Default constructor.
     PMU_ADS1115(uint8_t address = 0x48);
 
-    // Destructor.
+    /// Destructor.
     ~PMU_ADS1115();
 
     /**
      * Attach a PMU_ADS1115 device to devices list.
-     * Creates an instance of the class for a specific device number and ready pin. If an object for the same channel exists, it is replaced.
+     * Creates an instance of the class for a specific device number and ready pin. If an object for the same device_number exists, it is replaced.
+     * @param device_number can be 1, 2, 3 or 4.   
+     * @param pin_number is digital input pin for RDY singlas.  
+     * @note Max 4 PMU_ADS1115 device can used.
+     * @return true if successed.
      */ 
-    bool attach(uint8_t device_number, uint8_t pin_number);
+    bool attach(uint8_t device_number, int8_t pin_number);
 
-    // Removes an object for a specific device.
-    bool detach(void);
+    /**
+     * Removes an device for a specific object but not remove entire object.
+     */
+    void detach(void);
 
-    /// Initial object. check parameters.
+    /**
+     * Initial object. check parameters.
+     * @return true if successed.
+     */
     bool init(void);
 
     /// update values or handle ADS1115 conversion.
@@ -130,22 +143,22 @@ class PMU_ADS1115
 
   private:
 
-    uint _channel;        /// Channel number of ADS1115 for ready to convertion or read.
-    bool _isExist;        /// Flag for ADS1115 conection.
-    bool _RDYFlag;        /// Flag for conversion completed.
-    float _voltRef;       /// Reference voltage for ADS11115.
+    uint _channel;             /// Channel number of ADS1115 for ready to convertion or read.
+    bool _isExist;             /// Flag for ADS1115 conection.
+    volatile bool _RDYFlag;    /// Flag for conversion completed.
+    float _voltRef;            /// Reference voltage for ADS11115. [volt]
 
-    // Static array to store instances per channel
+    // Static array to store instances per channel.  
     // Array to hold one object per device (1-4)
     static PMU_ADS1115* _instances[4];
 
-    // Define function pointer type
+    /// Define function pointer type.
     typedef void (*FunctionPtr)();
 
-    // FunctionPtr object for RCIN PWM interrupts handler.
+    /// FunctionPtr object for RCIN PWM interrupts handler.  
     FunctionPtr _funPointer;
 
-    // Flag for store state of channeles that attached(true) or not_attached(false)
+    /// Flag for store state of channeles that attached(true) or not_attached(false).   
     bool _attachedFlag;
 
     /// Check parameters validation.
@@ -154,10 +167,10 @@ class PMU_ADS1115
     // ------------------------------------------------
     // Friends functions for interrupts handling.
 
-    friend void _adsReadyDevice_1(void);
-    friend void _adsReadyDevice_2(void);
-    friend void _adsReadyDevice_3(void);
-    friend void _adsReadyDevice_4(void);
+    friend void _adsReadyDevice_1(void);            //< ADS1115 RDY interrupt handler for device 1.
+    friend void _adsReadyDevice_2(void);            //< ADS1115 RDY interrupt handler for device 2.
+    friend void _adsReadyDevice_3(void);            //< ADS1115 RDY interrupt handler for device 3.
+    friend void _adsReadyDevice_4(void);            //< ADS1115 RDY interrupt handler for device 4.
 
 };
 
