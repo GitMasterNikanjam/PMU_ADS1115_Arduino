@@ -7,6 +7,7 @@
 // Define macros:
 
 #define ADS1115_RAW_RANGE             32767.0     // 16 bit resolution. int16 value from get ADS channels
+#define ADS1115_DEFAULT_ADD           0x48        // Default I2C address of ADS1115 ADC.
 
 // ##################################################################
 // Initial static members: 
@@ -39,11 +40,9 @@ void _adsReadyDevice_4(void)
 // ##################################################################
 // PMU_ADS1115 class:
 
-PMU_ADS1115::PMU_ADS1115(uint8_t address)
+PMU_ADS1115::PMU_ADS1115()
 {
-  parameters.ADDRESS = address;
-  ADS = ADS1115(parameters.ADDRESS);
-
+  parameters.ADDRESS = ADS1115_DEFAULT_ADD;
   parameters.DATA_RATE = 4;
   parameters.RDY_PIN = -1;
 
@@ -71,10 +70,11 @@ PMU_ADS1115::PMU_ADS1115(uint8_t address)
 
 PMU_ADS1115::~PMU_ADS1115()
 {
-  detach();
+  detachRdyPin();
+  delete _ADS;
 }
 
-bool PMU_ADS1115::attach(uint8_t deviceNumber, int8_t RDY_pinNumber)
+bool PMU_ADS1115::attachRdyPin(uint8_t RDY_pinNumber, uint8_t deviceNumber)
 {
   if( (deviceNumber > 4) || (deviceNumber == 0) )
   {
@@ -88,24 +88,13 @@ bool PMU_ADS1115::attach(uint8_t deviceNumber, int8_t RDY_pinNumber)
     return false;
   }
 
-  if (_instances[deviceNumber - 1] != nullptr) 
-  {
-      // Detach any existing object for this channel
-      _instances[deviceNumber - 1]->detach();
-      delete _instances[deviceNumber - 1];
-  }
-
-  // Create a new object for this channel
-  _instances[deviceNumber - 1] = this;
-
-  parameters.DEVICE_NUM = deviceNumber;
   parameters.RDY_PIN = RDY_pinNumber;
   _attachedFlag = true;
   
   return true;
 }
 
-void PMU_ADS1115::detach(void) 
+void PMU_ADS1115::detachRdyPin(void) 
 {
   // Detach the interrupt and delete the object
   detachInterrupt(digitalPinToInterrupt(parameters.RDY_PIN));
@@ -120,18 +109,24 @@ bool PMU_ADS1115::init(void)
     return false;
   }
 
-  if(ADS.isConnected())
+  // Create a new object for this channel
+  _instances[parameters.DEVICE_NUM - 1] = this;
+
+  _ADS = new ADS1115(parameters.ADDRESS);
+
+  if(_ADS->isConnected())
   {
     _isExist = true;
-    ADS.begin();
-    ADS.setGain(parameters.PGA);        // 6.144 volt --> max voltage read
-    ADS.setDataRate(parameters.DATA_RATE); 
-    ADS.setComparatorPolarity(parameters.RDY_POLARITY);
+
+    _ADS->begin();
+    _ADS->setGain(parameters.PGA);        // 6.144 volt --> max voltage read
+    _ADS->setDataRate(parameters.DATA_RATE); 
+    _ADS->setComparatorPolarity(parameters.RDY_POLARITY);
       
     // SET ALERT RDY PIN
-    ADS.setComparatorThresholdHigh(0x8000);
-    ADS.setComparatorThresholdLow(0x0000);
-    ADS.setComparatorQueConvert(0);
+    _ADS->setComparatorThresholdHigh(0x8000);
+    _ADS->setComparatorThresholdLow(0x0000);
+    _ADS->setComparatorQueConvert(0);
     
     if( (_attachedFlag == true) && (parameters.RDY_PIN >= 0) )
     {
@@ -157,12 +152,12 @@ bool PMU_ADS1115::init(void)
 
       if(parameters.RDY_POLARITY == 0)
       {
-        ADS.setComparatorPolarity(LOW);
+        _ADS->setComparatorPolarity(LOW);
         attachInterrupt(digitalPinToInterrupt(parameters.RDY_PIN), _funPointer, FALLING);
       }
       else if(parameters.RDY_POLARITY == 1)
       {
-        ADS.setComparatorPolarity(HIGH);
+        _ADS->setComparatorPolarity(HIGH);
         attachInterrupt(digitalPinToInterrupt(parameters.RDY_PIN), _funPointer, RISING);
       }
       else
@@ -178,18 +173,17 @@ bool PMU_ADS1115::init(void)
       return false;
     }
 
-    ADS.setMode(0);            // Continuse mode
+    _ADS->setMode(0);            // Continuse mode
 
     for(int i = 0 ; i <= 3; ++i)
     {
       if(parameters.ACTIVE_MODE[i] == true)
       {
         _channel = i;
-        ADS.readADC(_channel);            // trigger first read
+        _ADS->readADC(_channel);            // trigger first read
         break;
       }
     }
-
   }
   else
   {
@@ -205,7 +199,7 @@ void PMU_ADS1115::update(void)
   if (_RDYFlag)
   {
     // save the value
-    value.raw[_channel] = ADS.getValue();
+    value.raw[_channel] = _ADS->getValue();
 
     switch(_channel)
     {
@@ -233,7 +227,7 @@ void PMU_ADS1115::update(void)
       } 
     }while(parameters.ACTIVE_MODE[_channel] == false);
     
-    ADS.readADC(_channel);
+    _ADS->readADC(_channel);
     _RDYFlag = false;
   }
 }
@@ -249,7 +243,10 @@ bool PMU_ADS1115::_checkParameters(void)
                (parameters.RDY_POLARITY <= 1) &&
                (parameters.UPDATE_FRQ >= 0) &&
                (parameters.ACTIVE_MODE[0] || parameters.ACTIVE_MODE[1] || parameters.ACTIVE_MODE[2] || parameters.ACTIVE_MODE[3]) &&
-               ( (parameters.PGA <= 2) || (parameters.PGA == 4) || (parameters.PGA == 8) || (parameters.PGA == 16) );
+               ( (parameters.PGA <= 2) || (parameters.PGA == 4) || (parameters.PGA == 8) || (parameters.PGA == 16) ) &&
+               (_instances[parameters.DEVICE_NUM - 1] == nullptr) &&
+               (parameters.ADDRESS >= 0x48) && (parameters.ADDRESS <= 0x4B);
+
 
   if(state == false)
   {
