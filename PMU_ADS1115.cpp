@@ -70,33 +70,12 @@ PMU_ADS1115::PMU_ADS1115()
 
 PMU_ADS1115::~PMU_ADS1115()
 {
-  detachRdyPin();
+  _detachRdyPin();
   delete _ADS;
 }
 
-bool PMU_ADS1115::attachRdyPin(uint8_t RDY_pinNumber, uint8_t deviceNumber)
+void PMU_ADS1115::_detachRdyPin(void) 
 {
-  if( (deviceNumber > 4) || (deviceNumber == 0) )
-  {
-    errorMessage = "Error PMU_ADS1115: Device number is not correct.";
-    return false;
-  }
-
-  if(RDY_pinNumber < 0)
-  {
-    errorMessage = "Error PMU_ADS1115: RDY pin number is not valid.";
-    return false;
-  }
-
-  parameters.RDY_PIN = RDY_pinNumber;
-  _attachedFlag = true;
-  
-  return true;
-}
-
-void PMU_ADS1115::detachRdyPin(void) 
-{
-  // Detach the interrupt and delete the object
   detachInterrupt(digitalPinToInterrupt(parameters.RDY_PIN));
   _instances[parameters.DEVICE_NUM - 1] = nullptr;
   _attachedFlag = false;
@@ -109,7 +88,7 @@ bool PMU_ADS1115::init(void)
     return false;
   }
 
-  // Create a new object for this channel
+  // Set _instances pointer for this device.
   _instances[parameters.DEVICE_NUM - 1] = this;
 
   _ADS = new ADS1115(parameters.ADDRESS);
@@ -128,48 +107,39 @@ bool PMU_ADS1115::init(void)
     _ADS->setComparatorThresholdLow(0x0000);
     _ADS->setComparatorQueConvert(0);
     
-    if( (_attachedFlag == true) && (parameters.RDY_PIN >= 0) )
-    {
-      pinMode(parameters.RDY_PIN,INPUT_PULLUP);
-      
-      _funPointer = nullptr;
-      
-      switch(parameters.DEVICE_NUM)
-      {
-        case 1:
-          _funPointer = _adsReadyDevice_1;
-        break;
-        case 2:
-          _funPointer = _adsReadyDevice_2;
-        break;
-        case 3:
-          _funPointer = _adsReadyDevice_3;
-        break;
-        case 4:
-          _funPointer = _adsReadyDevice_4;
-        break;		
-      }
-
-      if(parameters.RDY_POLARITY == 0)
-      {
-        _ADS->setComparatorPolarity(LOW);
-        attachInterrupt(digitalPinToInterrupt(parameters.RDY_PIN), _funPointer, FALLING);
-      }
-      else if(parameters.RDY_POLARITY == 1)
-      {
-        _ADS->setComparatorPolarity(HIGH);
-        attachInterrupt(digitalPinToInterrupt(parameters.RDY_PIN), _funPointer, RISING);
-      }
-      else
-      {
-        errorMessage = "Error PMU_ADS1115: Init not successed. ADS1115 device not connected.";
-        return false;
-      }
+    pinMode(parameters.RDY_PIN,INPUT_PULLUP);
     
+    _funPointer = nullptr;
+    
+    switch(parameters.DEVICE_NUM)
+    {
+      case 1:
+        _funPointer = _adsReadyDevice_1;
+      break;
+      case 2:
+        _funPointer = _adsReadyDevice_2;
+      break;
+      case 3:
+        _funPointer = _adsReadyDevice_3;
+      break;
+      case 4:
+        _funPointer = _adsReadyDevice_4;
+      break;		
+    }
+
+    if(parameters.RDY_POLARITY == 0)
+    {
+      _ADS->setComparatorPolarity(LOW);
+      attachInterrupt(digitalPinToInterrupt(parameters.RDY_PIN), _funPointer, FALLING);
+    }
+    else if(parameters.RDY_POLARITY == 1)
+    {
+      _ADS->setComparatorPolarity(HIGH);
+      attachInterrupt(digitalPinToInterrupt(parameters.RDY_PIN), _funPointer, RISING);
     }
     else
     {
-      errorMessage = "Error PMU_ADS1115: Init not successed.";
+      errorMessage = "Error PMU_ADS1115: Init not successed. RDY_POLARITY is not correct.";
       return false;
     }
 
@@ -187,15 +157,54 @@ bool PMU_ADS1115::init(void)
   }
   else
   {
-    _isExist = 0;
-    errorMessage = "ADS Sensor Not Connected!";
+    _isExist = false;
+    errorMessage = "Error PMU_ADS1115: ADS1115 sensor is not detected!";
     return false;
+  }
+
+  switch(parameters.PGA)
+  {
+    case 0:
+      _voltRef = 6.144;
+    break;
+    case 1:
+      _voltRef = 4.096;
+    break;
+    case 2:
+      _voltRef = 2.048;
+    break;
+    case 4:
+      _voltRef = 1.024;
+    break;
+    case 8:
+      _voltRef = 0.512;
+    break;
+    case 16:
+      _voltRef = 0.256;
+    break;
+    default:
+      errorMessage = "Error PMU_ADS1115: PGA parameters is not correct.";
+      return false;
   }
   return true;
 }
 
 void PMU_ADS1115::update(void)
 {
+  if(parameters.UPDATE_FRQ > 0)
+  {
+    uint32_t tNow = millis();
+
+    if( (tNow - _T) < (1.0/parameters.UPDATE_FRQ ) )
+    {
+      return;
+    }
+    else
+    {
+      _T = tNow;
+    }
+  }
+  
   if (_RDYFlag)
   {
     // save the value
@@ -239,7 +248,7 @@ bool PMU_ADS1115::_checkParameters(void)
                (parameters.DEVICE_NUM >= 1) && (parameters.DEVICE_NUM <= 4) &&
                (parameters.PGA <= 16) &&
                (parameters.RDY_PIN >= 0) &&
-               (parameters.SENSITIVITY > 0) &&
+               (parameters.SENSITIVITY[0] > 0) && (parameters.SENSITIVITY[1] > 0) && (parameters.SENSITIVITY[2] > 0) && (parameters.SENSITIVITY[3] > 0) &&
                (parameters.RDY_POLARITY <= 1) &&
                (parameters.UPDATE_FRQ >= 0) &&
                (parameters.ACTIVE_MODE[0] || parameters.ACTIVE_MODE[1] || parameters.ACTIVE_MODE[2] || parameters.ACTIVE_MODE[3]) &&

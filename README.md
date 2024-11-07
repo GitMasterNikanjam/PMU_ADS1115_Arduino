@@ -4,6 +4,7 @@
 - This library uses the <ADS1X15.h> library by Rob Tillaart for communication with the ADS1115 ADC.    
 - Reference repository for the <ADS1X15.h> library: https://github.com/RobTillaart/ADS1X15     
 - With this library, it is only possible and allowed to create up to 4 objects from the PMU_ADS1115 class.  
+- The RDY pin of the ADS1115 ADC must be used and connected to the MCU; otherwise, the PMU_ADS1115 cannot initialize successfully.       
 
 ℹ️ **Notice:**    
   Each PMU_ADS1115 object uses an independent ADS1115 ADC IC. Therefore, each object should use a different I2C slave device address.   
@@ -15,9 +16,134 @@ The I2C device address for each object can be 0x48, 0x49, 0x4A, or 0x4B.
 
 ## Public Member Functions
 
+```c++
+
+/**
+     * Initial object. check parameters.
+     * @return true if successed.
+     */
+    bool init(void);
+
+    /**
+      @brief update values or handle ADS1115 conversion.  
+      @note In each update execution, a maximum of one channel of the ADS1115 ADC updates its value.   
+    */ 
+    void update(void);
+
+```
 
 ## Public Member Variables
 
+```c++
+
+/// @brief Last error accured for object.
+    String errorMessage;
+
+    /**
+      @struct ParametersStructure
+      @brief Parameters structure.
+    */
+    struct ParametersStructure
+    {
+      /**
+        @brief Device number. Number can be just 1, 2, 3 or 4. Other values is not correct.
+      */ 
+      uint8_t DEVICE_NUM;
+
+      /**
+        @brief ADS1115 I2C device address. The I2C device address for each object can be 0x48, 0x49, 0x4A, or 0x4B.  
+        
+          ADDR pin connected to Address Notes:  
+
+          GND 0x48 (default)    
+
+          VDD 0x49     
+
+          SDA 0x4A    
+
+          SCL 0x4B 
+      */ 
+      uint16_t ADDRESS;                    
+
+      /**
+        @brief Data rate in samples per second, based on datasheet numbers.   
+
+      |data_rate---|ADS101x---|ADS 111x------|
+
+      |------------|----------|--------------|
+
+      |0           |128       |8 slowest
+
+      |1           |250       |16  
+
+      |2           |490       |32  
+
+      |3           |920       |64  
+
+      |4           |1600      |128 default
+
+      |5           |2400      |250 
+
+      |6           |3300      |475 
+
+      |7           |3300      |860 fastest
+      */
+      uint8_t DATA_RATE;                  
+
+      /// @brief Digital input pin on arduino for ALERT/RDY digital output pin. This pin used for conversion ready pin.
+      int8_t RDY_PIN; 
+
+      /// @brief RDY pin signal polarity. 0: Active LOW, 1: Active High.
+      uint8_t RDY_POLARITY;                    
+      
+      /// @brief Sensitivity of channels. milli volt per user defined unit. [mv/uu]
+      float SENSITIVITY[4];
+
+      /// @brief Offsset value for channels. [mvolt]
+      float OFFSET[4];
+
+      /// @brief Enable/Disable channels of the ADS1115 ADC. If a channel is disabled, then its value is not updated.
+      bool ACTIVE_MODE[4];
+
+      /**
+       * @brief Programmable gain amplifier configuration. 
+
+       * PGA value   ,Full scale range Voltage      
+
+       * 0           ±6.144V default    
+
+       * 1           ±4.096V    
+
+       * 2           ±2.048V    
+
+       * 4           ±1.024V 
+
+       * 8           ±0.512V 
+
+       * 16          ±0.256V 
+
+       * @note  other values not acceptable.
+       */
+      uint8_t PGA;
+
+      /// @brief Update frequency. This value ensures that updates occur at a specific frequency. Hint: A value of 0 means it is disabled and update in free frequency.
+      float UPDATE_FRQ;
+    }parameters;
+
+    /**
+      @struct ValuesStructure
+      @brief Value structure.
+    */
+    struct ValuesStructure
+    {
+      /// @brief Raw 16bit values for channels.
+      int16_t raw[4];
+
+      /// @brief Converted values by sensitivity and offsets parameters.
+      float converted[4];
+    }value;
+
+```
 -------------------------------------------------------
 # RobTillaart/ADS1X15 library user Guide 
 

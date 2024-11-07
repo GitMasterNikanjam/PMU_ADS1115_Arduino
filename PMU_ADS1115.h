@@ -54,11 +54,7 @@ class PMU_ADS1115
       uint16_t ADDRESS;                    
 
       /**
-<<<<<<< HEAD
-        Data rate in samples per second, based on datasheet numbers.   
-=======
         @brief Data rate in samples per second, based on datasheet numbers.   
->>>>>>> develop
 
       |data_rate---|ADS101x---|ADS 111x------|
 
@@ -142,52 +138,59 @@ class PMU_ADS1115
     ~PMU_ADS1115();
 
     /**
-     * Attach a PMU_ADS1115 device to devices list.
-     * Creates an instance of the class for a specific device number and ready pin. If an object for the same device_number exists, it is replaced.
-     * @param device_number can be 1, 2, 3 or 4.   
-     * @param pin_number is digital input pin for RDY singlas.  
-     * @note Max 4 PMU_ADS1115 device can used.
-     * @return true if successed.
-     */ 
-    bool attachRdyPin(uint8_t RDY_pinNumber, uint8_t deviceNumber = 1);
-
-    /// @brief Removes an object for a specific device.
-    void detachRdyPin(void);
-
-    /**
      * Initial object. check parameters.
      * @return true if successed.
      */
     bool init(void);
 
-    /// update values or handle ADS1115 conversion.
+    /**
+      @brief update values or handle ADS1115 conversion.  
+      @note In each update execution, a maximum of one channel of the ADS1115 ADC updates its value.   
+    */ 
     void update(void);
 
   private:
 
-    uint _channel;             /// Channel number of ADS1115 for ready to convertion or read.
-    bool _isExist;             /// Flag for ADS1115 conection.
-    volatile bool _RDYFlag;    /// Flag for conversion completed.
-    float _voltRef;            /// Reference voltage for ADS11115. [volt]
+    /// @brief Channel number of ADS1115 for ready to convertion or read.
+    uint _channel;             
+
+    /// @brief Flag for ADS1115 conection.
+    bool _isExist;             
+
+    /// @brief Flag for conversion completed.
+    volatile bool _RDYFlag;    
+
+    /// @brief Reference voltage for ADS11115. [volt]
+    float _voltRef;        
+
+    /// @brief Record the time value for each update.
+    uint32_t _T;    
 
     /// @brief ADS1115 pointer object from ADS1X15 library.
     ADS1115 *_ADS; 
 
-    // Static array to store instances per channel
-    // Array to hold one object per device (1-4)
+    /**
+      @brief Static array to store instances per device.
+    */ 
     static PMU_ADS1115* _instances[4];
 
-    /// Define function pointer type.
+    /// @brief Define function pointer type.
     typedef void (*FunctionPtr)();
 
-    /// FunctionPtr object for RCIN PWM interrupts handler.  
+    /// @brief FunctionPtr object for RCIN PWM interrupts handler.  
     FunctionPtr _funPointer;
 
-    /// Flag for store state of channeles that attached(true) or not_attached(false).   
+    /// @brief Flag for store state of channeles that attached(true) or not_attached(false).   
     bool _attachedFlag;
 
-    /// Check parameters validation.
+    /**
+      @brief Check parameters validation.
+      @return true if succeeded.
+    */ 
     bool _checkParameters(void);
+
+    /// @brief Detach the RDY interrupt and clear _instances pointer of this object.
+    void _detachRdyPin(void);
 
     // ------------------------------------------------
     // Friends functions for interrupts handling.
