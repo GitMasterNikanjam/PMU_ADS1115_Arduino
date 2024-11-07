@@ -1,11 +1,22 @@
 # PMU_ADS1115 Library for Arduino
 
-- This library can be used for a power module unit (PMU) as part of projects.
-- This library uses the <ADS1X15.h> library by Rob Tillaart for communication with the ADS1115 ADC.
-- Reference repository for the <ADS1X15.h> library: https://github.com/RobTillaart/ADS1X15
+- This library can be used for a power module unit (PMU) as part of projects.     
+- This library uses the <ADS1X15.h> library by Rob Tillaart for communication with the ADS1115 ADC.    
+- Reference repository for the <ADS1X15.h> library: https://github.com/RobTillaart/ADS1X15     
+- With this library, it is only possible and allowed to create up to 4 objects from the PMU_ADS1115 class.  
 
-Arduino library for I2C ADC ADS1015, ADS1115, and similar.
-Version: 0.3.11
+ℹ️ **Notice:**    
+  Each PMU_ADS1115 object uses an independent ADS1115 ADC IC. Therefore, each object should use a different I2C slave device address.   
+
+<div style="border: 1px solid #ccc; font-size: 16px; color: #000000; padding: 10px; background-color: #ffff00;">
+<strong>Notice:</strong>  
+The I2C device address for each object can be 0x48, 0x49, 0x4A, or 0x4B.    
+</div>
+
+## Public Member Functions
+
+
+## Public Member Variables
 
 ------------------------------------------------------
 # RobTillaart/ADS1X15 library user Guide 

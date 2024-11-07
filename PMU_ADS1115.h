@@ -9,30 +9,52 @@
 #include <ADS1X15.h>          // https://github.com/RobTillaart/ADS1X15
 
 // #################################################################################
-// Define macros:
+// Define Global Macros:
 
 
 
 // ###############################################################################
 // PMU_ADS1115 class:
 
+/**
+  @class PMU_ADS1115
+  @brief Class for power management unit with ADS1115 ADC.
+*/
 class PMU_ADS1115
 {
   public:
 
-    // Last error accured for object.
+    /// @brief Last error accured for object.
     String errorMessage;
 
+    /**
+      @struct ParametersStructure
+      @brief Parameters structure.
+    */
     struct ParametersStructure
     {
-      // Device number. number can be 1, 2, 3 or 4.
+      /**
+        @brief Device number. Number can be just 1, 2, 3 or 4. Other values is not correct.
+      */ 
       uint8_t DEVICE_NUM;
 
-      /// ADS1115 i2c device address
+      /**
+        @brief ADS1115 I2C device address. The I2C device address for each object can be 0x48, 0x49, 0x4A, or 0x4B.  
+        
+          ADDR pin connected to Address Notes:  
+
+          GND 0x48 (default)    
+
+          VDD 0x49     
+
+          SDA 0x4A    
+
+          SCL 0x4B 
+      */ 
       uint16_t ADDRESS;                    
 
-      /*
-        Data rate in samples per second, based on datasheet numbers.   
+      /**
+        @brief Data rate in samples per second, based on datasheet numbers.   
 
       |data_rate---|ADS101x---|ADS 111x------|
 
@@ -56,22 +78,23 @@ class PMU_ADS1115
       */
       uint8_t DATA_RATE;                  
 
-      /// Digital input pin on arduino for ALERT/RDY digital output pin. This pin used for conversion ready pin.
+      /// @brief Digital input pin on arduino for ALERT/RDY digital output pin. This pin used for conversion ready pin.
       int8_t RDY_PIN; 
 
+      /// @brief RDY pin signal polarity. 0: Active LOW, 1: Active High.
       uint8_t RDY_POLARITY;                    
       
-      /// Sensitivity of channels. milli volt per user defined unit. [mv/uu]
+      /// @brief Sensitivity of channels. milli volt per user defined unit. [mv/uu]
       float SENSITIVITY[4];
 
-      /// Offsset value for channels. [mvolt]
+      /// @brief Offsset value for channels. [mvolt]
       float OFFSET[4];
 
-      /// Enable/Disable of channels.
+      /// @brief Enable/Disable channels of the ADS1115 ADC. If a channel is disabled, then its value is not updated.
       bool ACTIVE_MODE[4];
 
       /**
-       * Programmable gain amplifier configuration. 
+       * @brief Programmable gain amplifier configuration. 
 
        * PGA value   ,Full scale range Voltage      
 
@@ -87,40 +110,41 @@ class PMU_ADS1115
 
        * 16          ±0.256V 
 
-       * Note: other values not acceptable.
+       * @note  other values not acceptable.
        */
       uint8_t PGA;
 
-      // Update frequency. This value ensures that updates occur at a specific frequency. Hint: A value of 0 means it is disabled and update in free frequency.
+      /// @brief Update frequency. This value ensures that updates occur at a specific frequency. Hint: A value of 0 means it is disabled and update in free frequency.
       float UPDATE_FRQ;
     }parameters;
 
+    /**
+      @struct ValuesStructure
+      @brief Value structure.
+    */
     struct ValuesStructure
     {
-      // Raw 16bit values for channels.
+      /// @brief Raw 16bit values for channels.
       int16_t raw[4];
 
-      // Converted values by sensitivity and offsets.
+      /// @brief Converted values by sensitivity and offsets parameters.
       float converted[4];
-    }value;
+    }value;                         
 
-    // ADS1115 object from ADS1X15 library.
-    ADS1115 ADS;                          
+    /// @brief Default constructor. Init some variables.
+    PMU_ADS1115();
 
-    /// Default constructor.
-    PMU_ADS1115(uint8_t address = 0x48);
-
-    // Destructor.
+    /// @brief Destructor.
     ~PMU_ADS1115();
 
     /**
      * Attach a PMU_ADS1115 device to devices list.
      * Creates an instance of the class for a specific device number and ready pin. If an object for the same channel exists, it is replaced.
      */ 
-    bool attach(uint8_t device_number, uint8_t pin_number);
+    bool attach(uint8_t RDY_pinNumber, uint8_t deviceNumber = 1);
 
-    // Removes an object for a specific device.
-    bool detach(void);
+    /// @brief Removes an object for a specific device.
+    void detach(void);
 
     /// Initial object. check parameters.
     bool init(void);
@@ -134,6 +158,9 @@ class PMU_ADS1115
     bool _isExist;        /// Flag for ADS1115 conection.
     bool _RDYFlag;        /// Flag for conversion completed.
     float _voltRef;       /// Reference voltage for ADS11115.
+
+    /// @brief ADS1115 pointer object from ADS1X15 library.
+    ADS1115 *_ADS; 
 
     // Static array to store instances per channel
     // Array to hold one object per device (1-4)
